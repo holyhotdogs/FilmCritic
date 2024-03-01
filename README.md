@@ -20,7 +20,7 @@ Commands
 Installation and Setup
 
 - Clone the Repository
-  - git clone https://github.com/your-repo-url.git
+  - git clone [https://github.com/your-repo-url.git](https://github.com/holyhotdogs/FilmCritic/blob/main/FilmCritic.py)
   - cd FilmCriticBot
 
 - Install Dependencies:
