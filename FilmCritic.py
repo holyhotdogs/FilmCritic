@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import requests
 from datetime import datetime
+import logging
 
 # Define intents
 intents = discord.Intents.default()
@@ -9,6 +10,9 @@ intents.message_content = True
 
 # Initialize bot with intents and command prefix '/'
 bot = commands.Bot(command_prefix='/', intents=intents)
+
+# Set up logging
+logging.basicConfig(filename='bot_errors.log', level=logging.ERROR)
 
 # Dictionary to store movies with their addition date/time
 movies = {}
@@ -35,7 +39,7 @@ def movie_exists(title):
         else:
             return False
     except Exception as e:
-        print("Error occurred while checking movie existence:", e)
+        logging.error(f"Error occurred while checking movie existence for '{title}': {e}")
         return False
 
 # Add movie command
@@ -69,9 +73,13 @@ async def finished(ctx, *, title):
 @bot.command()
 async def watched(ctx):
     if movies:
-        sorted_movies = sorted(movies.items(), key=lambda x: x[0]) # Sort movies alphabetically
-        movie_list = [f"{movie[0]} (Added: {movie[1]})" for movie in sorted_movies]
-        await ctx.send("List of watched movies:\n" + '\n'.join(movie_list))
+        try:
+            sorted_movies = sorted(movies.items(), key=lambda x: x[0]) # Sort movies alphabetically
+            movie_list = [f"{movie[0]} (Added: {movie[1]})" for movie in sorted_movies]
+            await ctx.send("List of watched movies:\n" + '\n'.join(movie_list))
+        except Exception as e:
+            logging.error(f"Error occurred while processing watched command: {e}")
+            await ctx.send("Oops! Something went wrong while fetching the watched movies.")
     else:
         await ctx.send("No movies have been added yet.")
 
@@ -79,9 +87,13 @@ async def watched(ctx):
 @bot.command()
 async def watchlist(ctx):
     if movies:
-        sorted_movies = sorted(movies.items(), key=lambda x: x[0]) # Sort movies alphabetically
-        movie_list = [f"{movie[0]} (Added: {movie[1]})" for movie in sorted_movies]
-        await ctx.send("Current watchlist:\n" + '\n'.join(movie_list))
+        try:
+            sorted_movies = sorted(movies.items(), key=lambda x: x[0]) # Sort movies alphabetically
+            movie_list = [f"{movie[0]} (Added: {movie[1]})" for movie in sorted_movies]
+            await ctx.send("Current watchlist:\n" + '\n'.join(movie_list))
+        except Exception as e:
+            logging.error(f"Error occurred while processing watchlist command: {e}")
+            await ctx.send("Oops! Something went wrong while fetching the watchlist.")
     else:
         await ctx.send("The watchlist is empty.")
 
@@ -89,8 +101,12 @@ async def watchlist(ctx):
 @bot.command()
 async def recent(ctx):
     if movies:
-        latest_movie = max(movies, key=movies.get)
-        await ctx.send(f"The most recent addition to the movie list is '{latest_movie}' (Added: {movies[latest_movie]}).")
+        try:
+            latest_movie = max(movies, key=movies.get)
+            await ctx.send(f"The most recent addition to the movie list is '{latest_movie}' (Added: {movies[latest_movie]}).")
+        except Exception as e:
+            logging.error(f"Error occurred while processing recent command: {e}")
+            await ctx.send("Oops! Something went wrong while fetching the most recent movie.")
     else:
         await ctx.send("No movies have been added yet.")
 
