@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
 import requests
-from datetime import datetime
 import logging
+from datetime import datetime
 
 # Define intents
 intents = discord.Intents.default()
@@ -17,21 +17,22 @@ logging.basicConfig(filename='bot_errors.log', level=logging.ERROR)
 # Dictionary to store movies with their addition date/time
 movies = {}
 
-# IMDb API base URL
-IMDB_API_BASE_URL = "http://www.omdbapi.com/"
+# OMDB API base URL
+OMDB_API_BASE_URL = "http://www.omdbapi.com/"
+OMDB_API_KEY = "YOUR_OMDB_API_KEY"  # Replace with your OMDB API key
 
-# Function to check if the movie exists on IMDb using IMDb API
+# Function to check if the movie exists on OMDB using OMDB API
 def movie_exists(title):
     try:
         # Prepare the request parameters
         params = {
-            "apikey": "YOUR_OMDB_API_KEY",  # Replace with your IMDb API key
-            "t": title,             # Title of the movie
-            "type": "movie"         # Search for movies only
+            "apikey": OMDB_API_KEY,
+            "t": title,
+            "type": "movie"
         }
         
-        # Send GET request to IMDb API
-        response = requests.get(IMDB_API_BASE_URL, params=params)
+        # Send GET request to OMDB API
+        response = requests.get(OMDB_API_BASE_URL, params=params)
         
         # Check if request was successful and movie exists
         if response.status_code == 200 and response.json().get("Response") == "True":
@@ -42,6 +43,46 @@ def movie_exists(title):
         logging.error(f"Error occurred while checking movie existence for '{title}': {e}")
         return False
 
+# Function to search for movie details using OMDB API
+def search_movie_details(title):
+    try:
+        # Prepare the request parameters
+        params = {
+            "apikey": OMDB_API_KEY,
+            "t": title,
+            "plot": "full"  # Get full plot description
+        }
+
+        # Send GET request to OMDB API
+        response = requests.get(OMDB_API_BASE_URL, params=params)
+        movie_data = response.json()
+
+        # Check if request was successful and movie exists
+        if response.status_code == 200 and movie_data.get("Response") == "True":
+            return movie_data
+        else:
+            return None
+    except Exception as e:
+        logging.error(f"Error occurred while searching for movie details for '{title}': {e}")
+        return None
+
+# Command to search for movie details
+@bot.command()
+async def moviedetails(ctx, *, title):
+    movie_data = search_movie_details(title)
+    if movie_data:
+        # Format and display movie details
+        embed = discord.Embed(title=movie_data['Title'], description=movie_data['Plot'], color=discord.Color.blue())
+        embed.set_thumbnail(url=movie_data['Poster'])
+        embed.add_field(name="Director", value=movie_data['Director'], inline=True)
+        embed.add_field(name="Release Date", value=movie_data['Released'], inline=True)
+        embed.add_field(name="Cast", value=movie_data['Actors'], inline=False)
+        embed.add_field(name="IMDB Rating", value=movie_data['imdbRating'], inline=True)
+        embed.add_field(name="Genre", value=movie_data['Genre'], inline=True)
+        await ctx.send(embed=embed)
+    else:
+        await ctx.send(f"Sorry, '{title}' details could not be found.")
+
 # Add movie command
 @bot.command()
 async def addmovie(ctx, *, title):
@@ -50,7 +91,7 @@ async def addmovie(ctx, *, title):
         movies[title] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         await ctx.send(f"Movie '{title}' added successfully!")
     else:
-        await ctx.send(f"Sorry, '{title}' doesn't seem to exist on IMDb.")
+        await ctx.send(f"Sorry, '{title}' doesn't seem to exist on OMDB.")
 
 # Watch movie command
 @bot.command()
